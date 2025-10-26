@@ -111,17 +111,20 @@ def main():
         print(f"termgraph v{__version__}")
         sys.exit()
 
-    categories, labels, data, colors = read_data(args)
+    data_obj = Data.from_file(args["filename"], args)
+    colors = _extract_colors(data_obj, args)
+
     try:
         if args["calendar"]:
-            calendar_heatmap(data, labels, args)
+            # calendar_heatmap still uses old interface
+            calendar_heatmap(data_obj.data, data_obj.labels, args)
         else:
-            chart(colors, data, args, labels, categories)
+            chart(data_obj, args, colors)
     except BrokenPipeError:
         pass
 
 
-def chart(colors: list, data: list, args: dict, labels: list, categories: list) -> None:
+def chart(data_obj: Data, args: dict, colors: list) -> None:
     """Handle the normalization of data and the printing of the graph."""
     # Convert CLI args dict to chart Args class, mapping incompatible keys
     chart_args_dict = dict(args)
@@ -137,9 +140,6 @@ def chart(colors: list, data: list, args: dict, labels: list, categories: list) 
     if colors:
         chart_args.update_args(colors=colors)
 
-    # Create Data object
-    data_obj = Data(data, labels, categories)
-
     # Choose chart type
     chart_obj: Chart
     if args["stacked"]:
@@ -154,8 +154,65 @@ def chart(colors: list, data: list, args: dict, labels: list, categories: list) 
     chart_obj.draw()
 
 
+def _extract_colors(data_obj: Data, args: dict) -> list:
+    """Extract and validate colors from args based on data dimensions.
+
+    Args:
+        data_obj: Data object containing the chart data
+        args: Dictionary of arguments including optional "color" and "stacked"
+
+    Returns:
+        List of color codes for each category
+    """
+    colors = []
+
+    # Determine number of categories from data dimensions
+    if data_obj.dims and len(data_obj.dims) > 1:
+        len_categories = data_obj.dims[1]
+    else:
+        len_categories = 1
+
+    # If user inserts colors, they should be as many as the categories.
+    if args.get("color") is not None:
+        # Decompose arguments for Windows
+        if os.name == "nt":
+            colorargs = re.findall(r"[a-z]+", args["color"][0])
+            if len(colorargs) != len_categories:
+                print(">> Error: Color and category array sizes don't match")
+            for color in colorargs:
+                if color not in AVAILABLE_COLORS:
+                    print(
+                        ">> Error: invalid color. choose from 'red', 'blue', 'green', 'magenta', 'yellow', 'black', 'cyan'"
+                    )
+                    sys.exit(2)
+        else:
+            if len(args["color"]) != len_categories:
+                print(">> Error: Color and category array sizes don't match")
+            for color in args["color"]:
+                if color not in AVAILABLE_COLORS:
+                    print(
+                        ">> Error: invalid color. choose from 'red', 'blue', 'green', 'magenta', 'yellow', 'black', 'cyan'"
+                    )
+                    sys.exit(2)
+
+        if os.name == "nt":
+            for color in colorargs:
+                colors.append(AVAILABLE_COLORS.get(color))
+        else:
+            for color in args["color"]:
+                colors.append(AVAILABLE_COLORS.get(color))
+
+    # If user hasn't inserted colors, pick the first n colors
+    # from the dict (n = number of categories).
+    if args.get("stacked") and not colors:
+        colors = [v for v in list(AVAILABLE_COLORS.values())[:len_categories]]
+
+    return colors
+
+
 def check_data(labels: list, data: list, args: dict) -> list:
     """Check that all data were inserted correctly. Return the colors."""
+
     # Check for empty arguments
     if not labels:
         print(">> Error: No labels provided")
@@ -221,6 +278,8 @@ def check_data(labels: list, data: list, args: dict) -> list:
 def read_data(args: dict) -> tuple[list, list, list, list]:
     """Read data from a file or stdin and returns it.
 
+    DEPRECATED: This function is deprecated. Use Data.from_file() and _extract_colors() instead.
+
     Filename includes (categories), labels and data.
     We append categories and labels to lists.
     Data are inserted to a list of lists due to the categories.
@@ -230,96 +289,11 @@ def read_data(args: dict) -> tuple[list, list, list, list]:
     categories = ['boys', 'girls']
     data = [ [20.4, 40.5], [30.7, 100.0], ...]"""
 
-    filename = args["filename"]
-    stdin = filename == "-"
+    # Use new Data.from_file() method
+    data_obj = Data.from_file(args["filename"], args)
+    colors = _extract_colors(data_obj, args)
 
-    if args["verbose"]:
-        print(f">> Reading data from {('stdin' if stdin else filename)}")
-
-    categories: list[str] = []
-    labels: list[str | None] = []
-    data: list = []
-    colors: list = []
-
-    f = None
-
-    try:
-        f = sys.stdin if stdin else open(filename, "r")
-        for line in f:
-            line = line.strip()
-            if line:
-                if not line.startswith("#"):
-                    # Line contains categories.
-                    if line.startswith("@"):
-                        cols = line.split(DELIM)
-                        cols[0] = cols[0].replace("@ ", "")
-                        categories = cols
-
-                    # Line contains label and values.
-                    else:
-                        if line.find(DELIM) > 0:
-                            cols = line.split(DELIM)
-                            delim = DELIM
-                        else:
-                            cols = line.split()
-                            delim = " "
-                        labeled_row = _label_row([col.strip() for col in cols], delim)
-                        data.append(labeled_row.data)
-                        labels.append(labeled_row.label)
-    except FileNotFoundError:
-        print(f">> Error: The specified file [{filename}] does not exist.")
-        sys.exit()
-    except IOError:
-        print("An IOError has occurred!")
-        sys.exit()
-    finally:
-        if f is not None:
-            f.close()
-
-    # Check that all data are valid. (i.e. There are no missing values.)
-    colors = check_data(labels, data, args)
-
-    return categories, labels, data, colors
-
-
-class _LabeledRow:
-    def __init__(self, label: str | None, data: list[float]):
-        self.label = label
-        self.data = data
-
-
-def _label_row(row: list[str], delim: str) -> _LabeledRow:
-    data = []
-    labels: list[str] = []
-    labelling = False
-
-    for text in row:
-        datum = _maybe_float(text)
-        if datum is None and not labels:
-            labels.append(text)
-            labelling = True
-        elif datum is None and labelling:
-            labels.append(text)
-        elif datum is not None:
-            data.append(datum)
-            labelling = False
-        else:
-            raise ValueError(f"Multiple labels not allowed: {labels}, {text}")
-
-    if labels:
-        label = delim.join(labels)
-    else:
-        label = row[0]
-        data.pop(0)
-
-    return _LabeledRow(label=label, data=data)
-
-
-def _maybe_float(text: str) -> float | None:
-    try:
-        return float(text)
-    except ValueError:
-        return None
+    return data_obj.categories, data_obj.labels, data_obj.data, colors
 
 
 def calendar_heatmap(data: dict, labels: list, args: dict) -> None:

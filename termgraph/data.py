@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import Union
+import sys
 
 
 class Data:
@@ -28,6 +29,12 @@ class Data:
         if data is None or labels is None:
             raise Exception("Both 'data' and 'labels' parameters are required")
 
+        if not labels:
+            raise Exception("No labels provided")
+
+        if not data:
+            raise Exception("No data provided")
+
         if len(data) != len(labels):
             raise Exception("The dimensions of the data and labels must be the same")
 
@@ -35,6 +42,77 @@ class Data:
         self.data = data
         self.categories = categories or []
         self.dims = self._find_dims(data, labels)
+
+    @classmethod
+    def from_file(cls, filename: str, args: dict) -> Data:
+        """Read data from a file or stdin and return a Data object.
+
+        This method handles reading chart data from files or stdin (when filename is "-").
+        The file format supports:
+        - Comments: lines starting with #
+        - Categories: lines starting with @ followed by category names
+        - Data rows: label followed by numeric values
+
+        Args:
+            filename: Path to data file, or "-" for stdin
+            args: Dictionary of arguments including optional "delim" and "verbose"
+
+        Returns:
+            Data object with parsed data, labels, and categories
+
+        Example file format:
+            @ Boys Girls
+            2001 20.4 40.5
+            2002 30.7 100.0
+        """
+        stdin = filename == "-"
+
+        # Get delimiter from args or use default
+        delim = args.get("delim", ",") if args.get("delim") else ","
+
+        if args.get("verbose"):
+            print(f">> Reading data from {('stdin' if stdin else filename)}")
+
+        categories: list[str] = []
+        labels: list[str | None] = []
+        data: list = []
+
+        f = None
+
+        try:
+            f = sys.stdin if stdin else open(filename, "r")
+            for line in f:
+                line = line.strip()
+                if line:
+                    if not line.startswith("#"):
+                        # Line contains categories.
+                        if line.startswith("@"):
+                            cols = line.split(delim)
+                            cols[0] = cols[0].replace("@ ", "")
+                            categories = cols
+
+                        # Line contains label and values.
+                        else:
+                            if line.find(delim) > 0:
+                                cols = line.split(delim)
+                                row_delim = delim
+                            else:
+                                cols = line.split()
+                                row_delim = " "
+                            labeled_row = _label_row([col.strip() for col in cols], row_delim)
+                            data.append(labeled_row.data)
+                            labels.append(labeled_row.label)
+        except FileNotFoundError:
+            print(f">> Error: The specified file [{filename}] does not exist.")
+            sys.exit()
+        except IOError:
+            print("An IOError has occurred!")
+            sys.exit()
+        finally:
+            if f is not None:
+                f.close()
+
+        return cls(data, labels, categories)
 
     def _find_dims(self, data, labels, dims=None) -> Union[tuple[int], None]:
         if dims is None:
@@ -190,3 +268,46 @@ class Data:
 
     def __repr__(self):
         return f"Data(data={self.data if len(str(self.data)) < 25 else str(self.data)[:25] + '...'}, labels={self.labels}, categories={self.categories})"
+
+
+class _LabeledRow:
+    """Internal helper class for parsing data rows with labels."""
+    def __init__(self, label: str | None, data: list[float]):
+        self.label = label
+        self.data = data
+
+
+def _label_row(row: list[str], delim: str) -> _LabeledRow:
+    """Parse a row of data, extracting label and numeric values."""
+    data = []
+    labels: list[str] = []
+    labelling = False
+
+    for text in row:
+        datum = _maybe_float(text)
+        if datum is None and not labels:
+            labels.append(text)
+            labelling = True
+        elif datum is None and labelling:
+            labels.append(text)
+        elif datum is not None:
+            data.append(datum)
+            labelling = False
+        else:
+            raise ValueError(f"Multiple labels not allowed: {labels}, {text}")
+
+    if labels:
+        label = delim.join(labels)
+    else:
+        label = row[0]
+        data.pop(0)
+
+    return _LabeledRow(label=label, data=data)
+
+
+def _maybe_float(text: str) -> float | None:
+    """Try to convert text to float, return None if not possible."""
+    try:
+        return float(text)
+    except ValueError:
+        return None
