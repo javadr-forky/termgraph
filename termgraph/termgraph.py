@@ -2,7 +2,7 @@ from __future__ import annotations
 import argparse
 import sys
 from datetime import datetime, timedelta
-from colorama import init  # type: ignore
+from colorama import just_fix_windows_console
 import os
 import re
 import importlib.metadata
@@ -14,18 +14,8 @@ from .chart import Chart, BarChart, StackedChart, HistogramChart, VerticalChart
 
 __version__ = importlib.metadata.version("termgraph")
 
-init()
-
-
-# DEPRECATED: Use Data.normalize() directly instead
-def normalize(data: list, width: int) -> list:
-    """Normalize the data and return it.
-
-    DEPRECATED: This function is deprecated. Use Data(data, labels).normalize(width) directly.
-    """
-    # Create a temporary Data object and use its normalize method
-    temp_data = Data(data, [f"label_{i}" for i in range(len(data))])
-    return temp_data.normalize(width)
+# colorama
+just_fix_windows_console()
 
 
 def init_args() -> dict:
@@ -428,6 +418,17 @@ def calendar_heatmap(data: dict, labels: list, args: dict) -> None:
                 sys.stdout.write("\033[0m")
 
         sys.stdout.write("\n")
+
+
+# DEPRECATED: Use Data.normalize() directly instead
+def normalize(data: list, width: int) -> list:
+    """Normalize the data and return it.
+
+    DEPRECATED: This function is deprecated. Use Data(data, labels).normalize(width) directly.
+    """
+    # Create a temporary Data object and use its normalize method
+    temp_data = Data(data, [f"label_{i}" for i in range(len(data))])
+    return temp_data.normalize(width)
 
 
 if __name__ == "__main__":

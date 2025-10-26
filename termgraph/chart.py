@@ -5,14 +5,14 @@ import math
 import sys
 from typing import Union, List, Tuple
 from itertools import zip_longest
-import colorama
+from colorama import just_fix_windows_console
 from .constants import TICK, SM_TICK, AVAILABLE_COLORS
 from .utils import cvt_to_readable, print_row_core
 from .data import Data
 from .args import Args
 
-colorama.init()
-
+# colorama
+just_fix_windows_console()
 
 def format_value(
     value: Union[int, float], format_str_arg, percentage_arg, suffix_arg
