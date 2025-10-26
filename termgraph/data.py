@@ -1,7 +1,7 @@
 """Data class for termgraph - handles all data-related operations."""
 
 from __future__ import annotations
-from typing import Union, Optional
+from typing import Union
 
 
 class Data:
@@ -9,8 +9,8 @@ class Data:
 
     def __init__(
         self,
-        data: Optional[list] = None,
-        labels: Optional[list[str]] = None,
+        data: list,
+        labels: list[str],
         categories: Union[list[str], None] = None,
     ):
         """Initialize data
