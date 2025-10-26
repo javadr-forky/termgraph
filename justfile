@@ -68,7 +68,5 @@ publish: build check-dist
 run-example:
     uv run python -m termgraph.termgraph data/ex1.dat
 
-# Run the application with custom data
-run file:
-    uv run python -m termgraph.termgraph {{file}}
-
+run file *args:
+    uv run python -m termgraph.termgraph {{file}} {{args}}
