@@ -7,7 +7,7 @@ import os
 import re
 import importlib.metadata
 
-from .constants import AVAILABLE_COLORS, DAYS, DELIM, TICK
+from .constants import AVAILABLE_COLORS, DAYS
 from .data import Data
 from .args import Args
 from .chart import Chart, BarChart, StackedChart, HistogramChart, VerticalChart
@@ -91,14 +91,6 @@ def init_args() -> dict:
             sys.exit(2)
 
     args = vars(parser.parse_args())
-
-    if args["custom_tick"] != "":
-        global TICK
-        TICK = args["custom_tick"]
-
-    if args["delim"] != "":
-        global DELIM
-        DELIM = args["delim"]
 
     return args
 

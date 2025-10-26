@@ -74,7 +74,7 @@ class Data:
             print(f">> Reading data from {('stdin' if stdin else filename)}")
 
         categories: list[str] = []
-        labels: list[str | None] = []
+        labels: list[str] = []
         data: list = []
 
         f = None
@@ -272,7 +272,7 @@ class Data:
 
 class _LabeledRow:
     """Internal helper class for parsing data rows with labels."""
-    def __init__(self, label: str | None, data: list[float]):
+    def __init__(self, label: str, data: list[float]):
         self.label = label
         self.data = data
 
