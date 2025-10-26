@@ -36,6 +36,15 @@ test-verbose:
 test-file file:
     uv run python -m pytest {{file}} -v
 
+# Run module API tests (standalone executable tests)
+test-module:
+    @echo "Running module-test1.py..."
+    @uv run python tests/module-test1.py
+    @echo "\nRunning module-test2.py..."
+    @uv run python tests/module-test2.py
+    @echo "\nRunning module-test3.py..."
+    @uv run python tests/module-test3.py
+
 # Lint code with ruff
 lint:
     uv run python -m ruff check .
