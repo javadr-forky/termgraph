@@ -6,12 +6,15 @@
 .coverage
 dist/
 htmlcov/
+.mypy_cache/
 *.pyc
+.pytest_cache/
 .python-version
 .ropeproject/
+.ruff_cache/
 termgraph.egg-info/
 uv.lock
-venv/
+.venv/
 
 # Editors
 .claude/
