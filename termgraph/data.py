@@ -68,7 +68,7 @@ class Data:
         stdin = filename == "-"
 
         # Get delimiter from args or use default
-        delim = args.get("delim", ",") if args.get("delim") else ","
+        delim = args.get("delim") or ","
 
         if args.get("verbose"):
             print(f">> Reading data from {('stdin' if stdin else filename)}")
