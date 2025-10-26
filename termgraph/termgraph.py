@@ -111,17 +111,17 @@ def main():
         print(f"termgraph v{__version__}")
         sys.exit()
 
-    _, labels, data, colors = read_data(args)
+    categories, labels, data, colors = read_data(args)
     try:
         if args["calendar"]:
             calendar_heatmap(data, labels, args)
         else:
-            chart(colors, data, args, labels)
+            chart(colors, data, args, labels, categories)
     except BrokenPipeError:
         pass
 
 
-def chart(colors: list, data: list, args: dict, labels: list) -> None:
+def chart(colors: list, data: list, args: dict, labels: list, categories: list) -> None:
     """Handle the normalization of data and the printing of the graph."""
     # Convert CLI args dict to chart Args class, mapping incompatible keys
     chart_args_dict = dict(args)
@@ -138,7 +138,7 @@ def chart(colors: list, data: list, args: dict, labels: list) -> None:
         chart_args.update_args(colors=colors)
 
     # Create Data object
-    data_obj = Data(data, labels)
+    data_obj = Data(data, labels, categories)
 
     # Choose chart type
     chart_obj: Chart
@@ -218,20 +218,6 @@ def check_data(labels: list, data: list, args: dict) -> list:
     return colors
 
 
-def print_categories(categories: list, colors: list) -> None:
-    """Print a tick and the category's name for each category above
-    the graph."""
-    for i in range(len(categories)):
-        if colors:
-            sys.stdout.write(f"\033[{colors[i]}m")  # Start to write colorized.
-
-        sys.stdout.write(TICK + " " + categories[i] + "  ")
-        if colors:
-            sys.stdout.write("\033[0m")  # Back to original.
-
-    print("\n\n")
-
-
 def read_data(args: dict) -> tuple[list, list, list, list]:
     """Read data from a file or stdin and returns it.
 
@@ -249,10 +235,6 @@ def read_data(args: dict) -> tuple[list, list, list, list]:
 
     if args["verbose"]:
         print(f">> Reading data from {('stdin' if stdin else filename)}")
-
-    print("")
-    if args["title"]:
-        print("# " + args["title"] + "\n")
 
     categories: list[str] = []
     labels: list[str | None] = []
@@ -296,9 +278,6 @@ def read_data(args: dict) -> tuple[list, list, list, list]:
 
     # Check that all data are valid. (i.e. There are no missing values.)
     colors = check_data(labels, data, args)
-    if categories:
-        # Print categories' names above the graph.
-        print_categories(categories, colors)
 
     return categories, labels, data, colors
 

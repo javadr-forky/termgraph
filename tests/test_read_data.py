@@ -105,31 +105,6 @@ def test_labels_at_end_of_row():
         assert data == [[1.0, 2.0, 3.0], [5.0, 6.0, 7.0], [9.0, 10.0, 11.0]]
 
 
-def test_read_data_with_title_prints_title():
-    with patch("sys.stdout", new=StringIO()) as output:
-        args = {
-            "filename": "data/ex4.dat",
-            "title": "spaghetti",
-            "width": 50,
-            "format": "{:<5.2f}",
-            "suffix": "",
-            "no_labels": False,
-            "color": None,
-            "vertical": False,
-            "stacked": False,
-            "different_scale": False,
-            "calendar": False,
-            "start_dt": None,
-            "custom_tick": "",
-            "delim": "",
-            "verbose": False,
-            "version": False,
-        }
-        tg.read_data(args)
-        output = output.getvalue().strip()
-        assert output == "# spaghetti\n\n▇ Boys  ▇ Girls"
-
-
 def test_read_data_verbose():
     with patch("sys.stdout", new=StringIO()) as output:
         args = {

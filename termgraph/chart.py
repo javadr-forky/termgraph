@@ -84,11 +84,13 @@ class Chart:
         title = self.args.get_arg("title")
 
         if title is not None:
+            print("")
             print(f"# {title}\n")
 
         if len(self.data.categories) > 0:
             colors = self.args.get_arg("colors")
 
+            # Print categories' names above the graph.
             for i in range(len(self.data.categories)):
                 if colors is not None and isinstance(colors, list):
                     sys.stdout.write(f"\033[{colors[i]}m")  # Start to write colorized.
@@ -98,8 +100,6 @@ class Chart:
                     sys.stdout.write("\033[0m")  # Back to original.
 
             print("\n")
-        elif title is not None:
-            print()
 
     def _normalize(self) -> list[list[float]]:
         """Normalize the data and return it."""
