@@ -46,6 +46,7 @@ def print_row_core(
     color: int | None = None,
     label_before: bool = False,
     zero_as_small_tick: bool = False,
+    tick: str = TICK,
 ) -> None:
     """Core logic for printing a row of bars in horizontal graphs.
 
@@ -56,6 +57,7 @@ def print_row_core(
         color: ANSI color code (optional)
         label_before: Whether to use small tick for zero values with label_before
         zero_as_small_tick: Additional condition for using small tick on zero
+        tick: Custom tick character to use (defaults to TICK constant)
     """
     sys.stdout.write("\033[0m")  # no color
 
@@ -69,7 +71,7 @@ def print_row_core(
         if color:
             sys.stdout.write(f"\033[{color}m")  # Start to write colorized.
         for _ in range(num_blocks):
-            sys.stdout.write(TICK)
+            sys.stdout.write(tick)
 
     if color:
         sys.stdout.write("\033[0m")  # Back to original.

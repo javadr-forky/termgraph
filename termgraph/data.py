@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import Union
 import sys
+from .constants import DELIM
 
 
 class Data:
@@ -68,7 +69,7 @@ class Data:
         stdin = filename == "-"
 
         # Get delimiter from args or use default
-        delim = args.get("delim") or ","
+        delim = args.get("delim") or DELIM
 
         if args.get("verbose"):
             print(f">> Reading data from {('stdin' if stdin else filename)}")

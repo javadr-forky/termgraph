@@ -29,23 +29,43 @@ def test_barchart_draws_correctly():
 def test_verticalchart_draws_correctly():
     labels = ["A", "B"]
     data_values = [[10], [20]]
-    
+
     data = Data(data_values, labels)
     args = Args(width=10)
-    
+
     chart = VerticalChart(data, args)
-    
+
     import io
     from contextlib import redirect_stdout
-    
+
     f = io.StringIO()
     with redirect_stdout(f):
         chart.draw()
     output = f.getvalue()
-    
+
     # Assert that the output contains the expected elements
     assert "▇" in output
     assert "A" in output
     assert "B" in output
     assert "10" in output
     assert "20" in output
+
+def test_custom_tick_appears_in_output():
+    labels = ["A", "B"]
+    data_values = [[10], [20]]
+
+    data = Data(data_values, labels)
+    args = Args(custom_tick="😀")
+
+    chart = BarChart(data, args)
+
+    import io
+    from contextlib import redirect_stdout
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        chart.draw()
+    output = f.getvalue()
+
+    # Assert that the custom tick appears in the output
+    assert "😀" in output

@@ -83,6 +83,9 @@ class Chart:
     def _print_header(self) -> None:
         title = self.args.get_arg("title")
 
+        custom_tick = self.args.get_arg("custom_tick")
+        tick = custom_tick if isinstance(custom_tick, str) and custom_tick else TICK
+
         if title is not None:
             print("")
             print(f"# {title}\n")
@@ -95,7 +98,7 @@ class Chart:
                 if colors is not None and isinstance(colors, list):
                     sys.stdout.write(f"\033[{colors[i]}m")  # Start to write colorized.
 
-                sys.stdout.write(TICK + " " + self.data.categories[i] + "  ")
+                sys.stdout.write(f"{tick} {self.data.categories[i]} ")
                 if colors:
                     sys.stdout.write("\033[0m")  # Back to original.
 
@@ -144,12 +147,17 @@ class HorizontalChart(Chart):
         if doprint:
             print(label, tail, " ", end="")
 
+        # Get custom tick if set, otherwise use default TICK
+        custom_tick = self.args.get_arg("custom_tick")
+        tick = custom_tick if isinstance(custom_tick, str) and custom_tick else TICK
+
         print_row_core(
             value=float(value),
             num_blocks=int(num_blocks),
             val_min=float(val_min),
             color=color,
             zero_as_small_tick=bool(self.args.get_arg("label_before")),
+            tick=tick,
         )
 
         if doprint:
@@ -277,12 +285,12 @@ class BarChart(HorizontalChart):
                     print(label, end="")
 
                 self.print_row(
-                    values[j],
-                    int(num_blocks[j]),
-                    val_min,
-                    color,
-                    label,
-                    str(tail) if tail is not None else "",
+                    value=values[j],
+                    num_blocks=int(num_blocks[j]),
+                    val_min=val_min,
+                    color=color,
+                    label=label,
+                    tail=str(tail) if tail is not None else "",
                 )
 
                 if not self.args.get_arg("label_before") and not self.args.get_arg(
@@ -317,6 +325,10 @@ class StackedChart(HorizontalChart):
         val_min = self.data.find_min()
         normal_data = self._normalize()
 
+        # Get custom tick if set, otherwise use default TICK
+        custom_tick = self.args.get_arg("custom_tick")
+        tick = custom_tick if isinstance(custom_tick, str) and custom_tick else TICK
+
         for i in range(len(self.data.labels)):
             if self.args.get_arg("no_labels"):
                 # Hide the labels.
@@ -339,6 +351,7 @@ class StackedChart(HorizontalChart):
                     val_min=val_min,
                     color=colors[j] if j < len(colors) else None,
                     zero_as_small_tick=False,
+                    tick=tick,
                 )
 
             if self.args.get_arg("no_values"):
@@ -501,11 +514,15 @@ class HistogramChart(Chart):
             width = width_arg
         else:
             width = 50  # default
-        
+
         # Create temporary Data object for count data
         from .data import Data
         temp_data = Data(count_list, [f"bin_{i}" for i in range(len(count_list))])
         normal_counts = temp_data.normalize(width)
+
+        # Get custom tick if set, otherwise use default TICK
+        custom_tick = self.args.get_arg("custom_tick")
+        tick = custom_tick if isinstance(custom_tick, str) and custom_tick else TICK
 
         for i, (start_border, end_border) in enumerate(zip(borders[:-1], borders[1:])):
             if colors and colors[0]:
@@ -524,6 +541,7 @@ class HistogramChart(Chart):
                 val_min=0,  # Histogram always starts from 0
                 color=color,
                 zero_as_small_tick=False,
+                tick=tick,
             )
 
             if self.args.get_arg("no_values"):
