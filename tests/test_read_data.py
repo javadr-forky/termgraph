@@ -128,3 +128,30 @@ def test_read_data_verbose():
         tg.read_data(args)
         output = output.getvalue().strip()
         assert output == ">> Reading data from data/ex1.dat"
+
+
+def test_read_data_custom_delimiter():
+    """Test that custom delimiter (pipe) works correctly"""
+    args = {
+        "filename": "data/ex_pipe.dat",
+        "title": None,
+        "width": 50,
+        "format": "{:<5.2f}",
+        "suffix": "",
+        "no_labels": False,
+        "color": None,
+        "vertical": False,
+        "stacked": False,
+        "different_scale": False,
+        "calendar": False,
+        "start_dt": None,
+        "custom_tick": "",
+        "delim": "|",
+        "verbose": False,
+        "version": False,
+    }
+    categories, labels, data, colors = tg.read_data(args)
+    assert categories == ["Category A", "Category B", "Category C"]
+    assert labels == ["Label One", "Label Two", "Label Three"]
+    assert data == [[10.5, 20.3, 15.8], [25.0, 18.5, 30.2], [12.1, 22.7, 19.4]]
+    assert colors == []
